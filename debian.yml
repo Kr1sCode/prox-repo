@@ -1,0 +1,38 @@
+---
+- name: Update Debian/Ubuntu system and reboot if necessary
+  hosts: all
+  become: yes
+  tasks:
+    - name: Determine OS distribution
+      set_fact:
+        os_family: "{{ ansible_os_family }}"
+
+    - name: Update Debian/Ubuntu systems
+      apt:
+        update_cache: yes
+        upgrade: dist
+      when: os_family == "Debian"
+
+    - name: Check if a reboot is required
+      command: ls /var/run/reboot-required
+      register: reboot_check
+      changed_when: false
+      ignore_errors: true  # Ignore errors if the file doesn't exist
+
+    - name: Get current kernel version
+      command: uname -r
+      register: current_kernel
+      changed_when: false
+
+    - name: Get installed kernel versions
+      command: dpkg --list | grep '^ii' | grep 'linux-image'
+      register: kernel_info
+      changed_when: false
+
+    - name: Check if a reboot is required
+      set_fact:
+        reboot_required: "{{ kernel_info.stdout_lines | select('search', current_kernel.stdout) | list | length == 0 }}"
+
+    - name: Reboot the system if required
+      reboot:
+      when: reboot_required | default(false)  # Default to false if not set
