@@ -13,7 +13,7 @@
         state: latest
       when: os_family == "RedHat"
 
-    - name: Check installed kernels
+    - name: Check installed kernel versions
       command: rpm -q kernel
       register: kernel_info
       changed_when: false
@@ -25,7 +25,7 @@
 
     - name: Check if a reboot is required
       set_fact:
-        reboot_required: "{{ (kernel_info.stdout_lines | select('search', current_kernel.stdout) | list | length) < kernel_info.stdout_lines | length }}"
+        reboot_required: "{{ kernel_info.stdout_lines | select('match', '^kernel-') | select('search', current_kernel.stdout) | list | length == 0 }}"
 
     - name: Reboot the system if required
       reboot:
