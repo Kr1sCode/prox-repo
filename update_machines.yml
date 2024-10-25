@@ -14,15 +14,18 @@
       when: os_family == "RedHat"
 
     - name: Check if a reboot is required
-      command: needs-restarting
-      register: reboot_check
+      command: rpm -q --last kernel
+      register: kernel_info
       changed_when: false
-      when: os_family == "RedHat"
-      ignore_errors: true  # Ignore errors if command is not found
 
-    - name: Determine if a reboot is required
+    - name: Get current kernel version
+      command: uname -r
+      register: current_kernel
+      changed_when: false
+
+    - name: Check if a reboot is required
       set_fact:
-        reboot_required: "{{ reboot_check.rc == 1 if reboot_check is defined else false }}"
+        reboot_required: "{{ (kernel_info.stdout_lines[0] is search(current_kernel.stdout)) | not }}"
 
     - name: Reboot the system if required
       reboot:
