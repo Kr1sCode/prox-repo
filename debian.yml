@@ -19,14 +19,14 @@
       changed_when: false
 
     - name: Get installed kernel versions
-      command: dpkg --list | grep '^ii' | grep 'linux-image'
+      command: dpkg --list
       register: kernel_info
       changed_when: false
       ignore_errors: true  # Ignoruj błąd, jeśli nie ma zainstalowanych jąder
 
     - name: Set kernel versions fact
       set_fact:
-        installed_kernels: "{{ kernel_info.stdout_lines | map(attribute='split') | map('first') | list }}"
+        installed_kernels: "{{ kernel_info.stdout_lines | select('search', 'linux-image') | map('regex_replace', '^ii\\s*(.*?)\\s.*$', '\\1') | list }}"
 
     - name: Check if a reboot is required
       set_fact:
