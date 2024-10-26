@@ -22,16 +22,16 @@
       shell: dpkg --list | grep 'linux-image'
       register: kernel_info
       changed_when: false
-      failed_when: kernel_info.rc > 1
+      failed_when: kernel_info.rc > 1  # Traktuj brak wyników jako sukces, ale zgłaszaj błędy dla innych problemów.
 
     - name: Ustaw wersje zainstalowanych jąder jako fakt
       set_fact:
         installed_kernels: "{{ kernel_info.stdout_lines | map('regex_replace', '^ii\\s*(.*?)\\s.*$', '\\1') | list }}"
-      when: kernel_info.stdout != ""
+      when: kernel_info.stdout != ""  # Ustaw fakt tylko wtedy, gdy są wyniki.
 
     - name: Ustaw domyślną wartość dla installed_kernels
       set_fact:
-        installed_kernels: []
+        installed_kernels: []  # Ustaw pustą listę, jeśli nie ma zainstalowanych jąder.
       when: kernel_info.stdout == ""
 
     - name: Sprawdź, czy wymagane jest ponowne uruchomienie
@@ -40,14 +40,4 @@
 
     - name: Uruchom ponownie system, jeśli to wymagane
       reboot:
-      when: reboot_required | bool
-
-    - name: Zatrzymaj kontenery LXC, jeśli wymagane
-      command: lxc-stop -n {{ item }}
-      with_items: "{{ lxc_containers }}"
-      when: reboot_required | bool
-
-    - name: Uruchom ponownie kontenery LXC po restarcie
-      command: lxc-start -n {{ item }}
-      with_items: "{{ lxc_containers }}"
       when: reboot_required | bool
