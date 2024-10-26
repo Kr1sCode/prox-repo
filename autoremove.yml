@@ -25,7 +25,7 @@
         current_time: "{{ ansible_date_time.epoch | int }}"
       when: >
         item.stdout_lines is defined and
-        item.stdout_lines | length > 1 and  # Sprawdzenie, czy są jakieś snapshoty
+        item.stdout_lines | length > 1 and
         (current_time - (item.stdout_lines[1].split()[1] | int)) / 86400 > days_threshold
 
     - name: Usuń stare snapshoty
