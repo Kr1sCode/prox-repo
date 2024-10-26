@@ -3,7 +3,7 @@
   hosts: proxmox_servers
   gather_facts: no
   vars:
-    days_old: 30  # Snapshoty starsze niż 30 dni zostaną usunięte
+    days_old: 2  # Snapshoty starsze niż 30 dni zostaną usunięte
 
   tasks:
     - name: Get list of VMs
