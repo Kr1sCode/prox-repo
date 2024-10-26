@@ -19,7 +19,7 @@
       changed_when: false
 
     - name: Get installed kernel versions
-      command: dpkg --list | grep -E 'linux-image-[0-9]+'
+      shell: dpkg --list | grep -E 'linux-image-[0-9]+'
       register: kernel_info
       changed_when: false
       ignore_errors: true  # Ignore error if no installed kernels are found
