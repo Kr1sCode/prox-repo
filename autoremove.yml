@@ -1,47 +1,36 @@
 ---
-- name: Usuwanie starych snapshotów w Proxmox
+- name: Clean up old snapshots on Proxmox VMs
   hosts: proxmox
-  gather_facts: yes
-  vars:
-    days_threshold: 5  # Liczba dni, po której snapshoty mają być usuwane
-    old_snapshots: []  # Inicjalizacja zmiennej old_snapshots
-
+  gather_facts: false
   tasks:
-    - name: Pobierz listę wszystkich VM-ID
-      shell: "qm list | awk 'NR>1 {print $1}'"
-      register: vm_id_list
-      changed_when: false
+    - name: Get list of VMs from Proxmox
+      community.general.proxmox_kvm:
+        api_host: "{{ proxmox_host }}"
+        api_user: "{{ proxmox_user }}"
+        api_password: "{{ proxmox_password }}"
+        validate_certs: no
+        state: info
+      register: vm_list
 
-    - name: Pobierz listę snapshotów dla każdej maszyny
-      shell: "qm listsnapshot {{ item }}"
-      loop: "{{ vm_id_list.stdout_lines }}"
-      register: snapshot_list
-      changed_when: false
+    - name: Check and remove snapshots older than 2 days
+      community.general.proxmox_kvm:
+        api_host: "{{ proxmox_host }}"
+        api_user: "{{ proxmox_user }}"
+        api_password: "{{ proxmox_password }}"
+        validate_certs: no
+        vmid: "{{ item.vmid }}"
+        state: snapshot_info
+      loop: "{{ vm_list.vms }}"
+      register: snapshot_info
 
-    - name: Debuguj snapshoty
-      debug:
-        var: snapshot_list.results
-
-    - name: Filtruj snapshoty starsze niż {{ days_threshold }} dni
-      set_fact:
-        old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[0].split()[0]}] }}"
-      loop: "{{ snapshot_list.results }}"
-      vars:
-        current_time: "{{ ansible_date_time.epoch | int }}"
-      when: >
-        item.stdout_lines is defined and
-        item.stdout_lines | length > 1 and
-        item.stdout_lines[0].split()[1] is defined and
-        (
-          current_time - (
-            (item.stdout_lines[0].split()[1] | 
-            strptime('%Y-%m-%d %H:%M:%S') | 
-            to_timestamp | 
-            int)
-          ) 
-        ) > (days_threshold * 86400)
-
-    - name: Usuń stare snapshoty
-      shell: "qm delsnapshot {{ item.vm_id }} {{ item.snapshot }}"
-      loop: "{{ old_snapshots }}"
-      when: old_snapshots | length
+    - name: Remove snapshots older than 2 days
+      community.general.proxmox_kvm:
+        api_host: "{{ proxmox_host }}"
+        api_user: "{{ proxmox_user }}"
+        api_password: "{{ proxmox_password }}"
+        validate_certs: no
+        vmid: "{{ item.0.vmid }}"
+        snapshot: "{{ item.1.name }}"
+        state: absent
+      loop: "{{ snapshot_info.results | subelements('snapshots') }}"
+      when: (ansible_date_time.iso8601 | to_datetime) - (item.1.date | to_datetime) > 2 * 24 * 3600
