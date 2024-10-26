@@ -24,15 +24,15 @@
 
     - name: Filtruj snapshoty starsze niż {{ days_threshold }} dni
       set_fact:
-        old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[1].split()[0]}] }}"
+        old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[0].split()[0]}] }}"
       loop: "{{ snapshot_list.results }}"
       vars:
         current_time: "{{ ansible_date_time.epoch | int }}"
       when: >
         item.stdout_lines is defined and
         item.stdout_lines | length > 1 and
-        (item.stdout_lines[1].split()[2] | int) is defined and
-        (current_time - (item.stdout_lines[1].split()[2] | int)) > (days_threshold * 86400)
+        (item.stdout_lines[0].split()[1] | int) is defined and
+        (current_time - (item.stdout_lines[0].split()[1] | int)) > (days_threshold * 86400)
 
     - name: Usuń stare snapshoty
       shell: "qm delsnapshot {{ item.vm_id }} {{ item.snapshot }}"
@@ -42,4 +42,4 @@
 
     - name: Wyświetl usunięte snapshoty
       debug:
-        var: deleted_s
+        var: deleted_snapshots.results
