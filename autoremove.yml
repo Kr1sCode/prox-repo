@@ -32,7 +32,7 @@
         item.stdout_lines is defined and
         item.stdout_lines | length > 1 and
         item.stdout_lines[0].split()[1] is defined and
-        (current_time - (item.stdout_lines[0].split()[1] | to_datetime('%Y-%m-%d %H:%M:%S') | to_unix)) > (days_threshold * 86400)
+        (current_time - (item.stdout_lines[0].split()[1] | to_datetime('%Y-%m-%d %H:%M:%S') | to_timestamp)) > (days_threshold * 86400)
 
     - name: Usuń stare snapshoty
       shell: "qm delsnapshot {{ item.vm_id }} {{ item.snapshot }}"
