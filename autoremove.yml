@@ -1,0 +1,30 @@
+---
+- name: Usuwanie starych snapshotów w Proxmox
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    days_threshold: 5  # Liczba dni, po której snapshoty mają być usuwane
+    vm_ids:            # Lista VM-ID maszyn, dla których chcesz usunąć snapshoty
+      - 102
+
+  tasks:
+    - name: Pobierz listę snapshotów starszych niż {{ days_threshold }} dni
+      command: |
+        for vm_id in {{ vm_ids | join(' ') }}; do
+          qm listsnapshot $vm_id | awk -v date_threshold="$(date --date='-{{ days_threshold }} days' +%s)" '
+          NR>1 {split($3, a, "/"); snapshot_date=mktime(a[1] " " a[2] " " a[3] " 00 00 00")}
+          snapshot_date < date_threshold {print $1 " " vm_id}
+          '
+        done
+      register: old_snapshots
+      changed_when: false
+
+    - name: Usuń stare snapshoty
+      shell: qm delsnapshot {{ item.split(' ')[1] }} {{ item.split(' ')[0] }}
+      loop: "{{ old_snapshots.stdout_lines }}"
+      when: old_snapshots.stdout_lines | length > 0
+      register: deleted_snapshots
+
+    - name: Wyświetl usunięte snapshoty
+      debug:
+        var: deleted_snapshots.results
