@@ -27,7 +27,7 @@
       when: >
         item.stdout_lines is defined and
         item.stdout_lines | length > 1 and
-        (current_time - (item.stdout_lines[1].split()[1] | int)) | int > (days_threshold * 86400)
+        (current_time - (item.stdout_lines[1].split()[1] | int)) > (days_threshold * 86400)
 
     - name: Usuń stare snapshoty
       shell: "qm delsnapshot {{ item.vm_id }} {{ item.snapshot }}"
