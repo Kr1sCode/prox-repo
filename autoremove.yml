@@ -6,11 +6,16 @@
     days_old: 2  # Snapshoty starsze niż 30 dni zostaną usunięte
 
   tasks:
-    - name: Get list of VMs
-      ansible.builtin.command:
-        cmd: "qm list | awk 'NR>1 {print $1}'"
-      register: vm_list
-      changed_when: false
+ - name: Get list of VMs
+  ansible.builtin.command:
+    cmd: "qm list"
+  register: vm_list
+  changed_when: false
+
+- name: Extract VM IDs
+  set_fact:
+    vm_ids: "{{ vm_list.stdout_lines[1:] | map('regex_search', '^\\s*(\\d+)') | map('first') | list }}"
+
 
     - name: Get list of LXC containers
       ansible.builtin.command:
