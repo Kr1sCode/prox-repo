@@ -1,7 +1,7 @@
 ---
 - name: Usuwanie starych snapshotów w Proxmox
   hosts: proxmox
-  gather_facts: yes  # Włącz zbieranie faktów
+  gather_facts: yes
   vars:
     days_threshold: 5  # Liczba dni, po której snapshoty mają być usuwane
     old_snapshots: []  # Inicjalizacja zmiennej old_snapshots
@@ -18,16 +18,21 @@
       register: snapshot_list
       changed_when: false
 
+    - name: Debuguj snapshoty
+      debug:
+        var: snapshot_list.results
+
     - name: Filtruj snapshoty starsze niż {{ days_threshold }} dni
       set_fact:
-        old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[1].split()[0]}] }}"
+        old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[0].split()[0]}] }}"
       loop: "{{ snapshot_list.results }}"
       vars:
         current_time: "{{ ansible_date_time.epoch | int }}"
       when: >
         item.stdout_lines is defined and
         item.stdout_lines | length > 1 and
-        (current_time - (item.stdout_lines[1].split()[1] | int)) / 86400 > days_threshold
+        item.stdout_lines[0].split()[1] is defined and
+        (current_time - (item.stdout_lines[0].split()[1] | to_datetime('%Y-%m-%d %H:%M:%S') | to_unix)) > (days_threshold * 86400)
 
     - name: Usuń stare snapshoty
       shell: "qm delsnapshot {{ item.vm_id }} {{ item.snapshot }}"
