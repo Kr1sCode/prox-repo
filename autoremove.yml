@@ -18,6 +18,10 @@
       register: snapshot_list
       changed_when: false
 
+    - name: Debuguj snapshoty
+      debug:
+        var: snapshot_list.results
+
     - name: Filtruj snapshoty starsze niż {{ days_threshold }} dni
       set_fact:
         old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[1].split()[0]}] }}"
@@ -27,7 +31,8 @@
       when: >
         item.stdout_lines is defined and
         item.stdout_lines | length > 1 and
-        (current_time - (item.stdout_lines[1].split()[1] | int)) > (days_threshold * 86400)
+        (item.stdout_lines[1].split()[2] | int) is defined and
+        (current_time - (item.stdout_lines[1].split()[2] | int)) > (days_threshold * 86400)
 
     - name: Usuń stare snapshoty
       shell: "qm delsnapshot {{ item.vm_id }} {{ item.snapshot }}"
@@ -37,4 +42,4 @@
 
     - name: Wyświetl usunięte snapshoty
       debug:
-        var: deleted_snapshots.results
+        var: deleted_s
