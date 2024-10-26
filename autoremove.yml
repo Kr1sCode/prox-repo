@@ -4,6 +4,7 @@
   gather_facts: yes  # Włącz zbieranie faktów
   vars:
     days_threshold: 5  # Liczba dni, po której snapshoty mają być usuwane
+    old_snapshots: []  # Inicjalizacja zmiennej old_snapshots
 
   tasks:
     - name: Pobierz listę wszystkich VM-ID
@@ -19,7 +20,7 @@
 
     - name: Filtruj snapshoty starsze niż {{ days_threshold }} dni
       set_fact:
-        old_snapshots: "{{ old_snapshots | default([]) + [{'vm_id': item.item, 'snapshot': snapshot[0]}] }}"
+        old_snapshots: "{{ old_snapshots + [{'vm_id': item.item, 'snapshot': item.stdout_lines[1].split()[0]}] }}"
       loop: "{{ snapshot_list.results }}"
       vars:
         current_time: "{{ ansible_date_time.epoch | int }}"
