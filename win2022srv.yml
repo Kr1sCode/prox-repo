@@ -3,9 +3,6 @@
   hosts: windows_servers
   gather_facts: no
   tasks:
-    - name: Zbieranie informacji o systemie
-      ansible.windows.win_feature_info:
-
     - name: Instalacja aktualizacji
       ansible.windows.win_updates:
         category_names:
