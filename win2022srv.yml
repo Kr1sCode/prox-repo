@@ -1,7 +1,6 @@
 ---
-- name: Aktualizacja Windows Server 2022
-  hosts: windows_servers
-  gather_facts: no
+- name: Windows rolling update
+  hosts: all
   tasks:
     - name: Instalacja aktualizacji
       ansible.windows.win_updates:
