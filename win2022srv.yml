@@ -1,26 +1,12 @@
 ---
-- name: Aktualizacja systemu Windows Server 2022
+- name: Aktualizacja Windows Server 2022
   hosts: windows_servers
   gather_facts: no
   tasks:
-    - name: Włączanie połączeń WinRM (opcjonalne, jeśli nie jest już skonfigurowane)
-      ansible.windows.win_feature:
-        name: WinRM
-        state: present
+    - name: Zbieranie informacji o systemie
+      ansible.windows.win_feature_info:
 
-    - name: Sprawdzanie dostępnych aktualizacji
-      ansible.windows.win_updates:
-        category_names:
-          - SecurityUpdates
-          - CriticalUpdates
-        state: searched
-      register: update_info
-
-    - name: Wyświetlanie dostępnych aktualizacji
-      debug:
-        var: update_info.updates
-
-    - name: Instalacja dostępnych aktualizacji
+    - name: Instalacja aktualizacji
       ansible.windows.win_updates:
         category_names:
           - SecurityUpdates
@@ -28,6 +14,6 @@
         reboot: yes
       register: update_result
 
-    - name: Restart serwera, jeśli wymaga tego aktualizacja
-      ansible.windows.win_reboot:
-        when: update_result.reboot_required
+    - name: Wyświetlanie wyników aktualizacji
+      debug:
+        var: update_result
